@@ -1,0 +1,13 @@
+---
+title: "p8105_hw6_sc5154"
+author: "Shaohan Chen"
+date: "2022-11-30"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, message = FALSE)
+```
+
+## Problem 1
