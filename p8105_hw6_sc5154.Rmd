@@ -2,7 +2,7 @@
 title: "p8105_hw6_sc5154"
 author: "Shaohan Chen"
 date: "2022-11-30"
-output: html_document
+output: github_document
 ---
 
 
@@ -16,6 +16,7 @@ library(tidyverse)
 
 
 ## Problem 1
+
 ```{r}
 weather_df = 
   rnoaa::meteo_pull_monitors(
@@ -30,7 +31,12 @@ weather_df =
   select(name, id, everything())
 ```
 
-To obtain a distribution for $\hat{r}^2$, we'll follow basically the same procedure we used for regression coefficients: draw bootstrap samples; the a model to each; extract the value I'm concerned with; and summarize. Here, we'll use `modelr::bootstrap` to draw the samples and `broom::glance` to produce `r.squared` values. 
+To obtain a distribution for $\hat{r}^2$, we'll do the following steps: 
+* Draw bootstrap samples; 
+* Generate a model to each
+* Extract the value we are concerned with
+* Summarize. 
+Here, we'll use `modelr::bootstrap` to draw the samples and `broom::glance` to produce `r.squared` values. 
 
 ```{r}
 weather_df %>% 
@@ -43,7 +49,11 @@ weather_df %>%
   ggplot(aes(x = r.squared)) + geom_density()
 ```
 
-In this example, the $\hat{r}^2$ value is high, and the upper bound at 1 may be a cause for the generally skewed shape of the distribution. If we wanted to construct a confidence interval for $R^2$, we could take the 2.5% and 97.5% quantiles of the estimates across bootstrap samples. However, because the shape isn't symmetric, using the mean +/- 1.96 times the standard error probably wouldn't work well.
+In this example, the $\hat{r}^2$ value is high, and the upper bound at 1 may account for the generally skewed shape of the distribution. 
+
+If we want to construct a confidence interval for $R^2$, we could take the 2.5% and 97.5% quantiles of the estimates across bootstrap samples. 
+
+However, because the shape is not symmetric, using the mean +/- 1.96 times the standard error probably wouldn't work well.
 
 We can produce a distribution for $\log(\beta_0 * \beta1)$ using a similar approach, with a bit more wrangling before we make our plot.
 
@@ -66,6 +76,6 @@ weather_df %>%
 
 As with $r^2$, this distribution is somewhat skewed and has some outliers. 
 
-The point of this is not to say you should always use the bootstrap -- it's possible to establish "large sample" distributions for strange parameters / values / summaries in a lot of cases, and those are great to have. But it is helpful to know that there's a way to do inference even in tough cases. 
+The point of this is not to say we should always use the bootstrap -- it's possible to establish "large sample" distributions for strange parameters / values / summaries in a lot of cases, and those are great to have. But it is helpful to know that there's a way to do inference even in tough cases. 
 
 ## Problem 2
