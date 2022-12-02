@@ -161,8 +161,6 @@ glm_training = function(city_data){
 }
 ```
 
-
-
 ```{r}
 cities_OR = 
   homicide_df %>%
@@ -173,6 +171,38 @@ cities_OR =
   ) %>%
   select(city_state, fit_logistic_city) %>%
   unnest(fit_logistic_city)
+```
+
+Finally, we make a plot that shows the estimated ORs and CIs for each city. And we will organize cities according to estimated OR, and comment on the plot.
+
+The source data of estimated ORs and CIs look like this:
+```{r}
+head(cities_OR, 5)
+```
+
+The plot is:
+```{r}
+cities_OR %>%
+  mutate(
+    city_state = fct_reorder(city_state, OR)
+  ) %>%
+  ggplot(aes(
+    x = city_state,
+    y = OR
+  )) +
+  geom_point() +
+  geom_errorbar(aes(
+    ymax = CI_upper,
+    ymin = CI_lower
+  )) +
+  labs(
+    title = "Odd Ratio's estimate & CI of solving homicides: male victims compared with female victims",
+    x = "City, State",
+    y = "Odds Ratio"
+  ) + 
+  theme(
+   title = element_text(size = 8)
+  )
 ```
 
 
