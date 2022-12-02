@@ -145,9 +145,36 @@ Now we run `glm` for each of the cities in our dataset, and extract the adjusted
 
 We will do this within a “tidy” pipeline, making use of `purrr::map`, list columns, and unnest as necessary to create a dataframe with estimated ORs and CIs for each city.
 
+We first write a function for operating logistic regression for each city. The basic structure is much like what we have written in previous paragraph.
 ```{r}
-
+glm_training = function(city_data){
+  glm_model = glm(solved ~ victim_age + victim_sex + victim_race, data = city_data, family = binomial())
+  glm_model %>%
+    broom::tidy() %>%
+    mutate(
+      OR = exp(estimate),
+      CI_lower = exp(estimate + qnorm(0.025) * std.error),
+      CI_upper = exp(estimate + qnorm(0.975) * std.error)
+    ) %>%
+    filter(term == "victim_sexMale") %>%
+    select(OR, CI_lower, CI_upper)
+}
 ```
+
+
+
+```{r}
+cities_OR = 
+  homicide_df %>%
+  select(city_state:solved, victim_race:victim_sex) %>%
+  nest(input_data = solved:victim_sex) %>%
+  mutate(
+    fit_logistic_city = purrr::map(input_data, glm_training)
+  ) %>%
+  select(city_state, fit_logistic_city) %>%
+  unnest(fit_logistic_city)
+```
+
 
 
 
