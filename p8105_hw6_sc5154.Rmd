@@ -291,9 +291,70 @@ Combining all the analysis above, we decide to choose the following variables in
 Now we build the linear regression model.
 
 ```{r}
-lm_model_1 = lm(bwt ~ babysex + bhead + blength + delwt + gaweeks + ppbmi + smoken + wtgain + mrace, data = birthweight_df)
+lm_model = lm(bwt ~ babysex + bhead + blength + delwt + gaweeks + ppbmi + smoken + wtgain + mrace, data = birthweight_df)
 
-summary(lm_model_1)
+summary(lm_model)
 ```
 
+The prediction results seem to be good and the features are generally significant.
 
+Now we make a plot of model residuals against fitted values, and we will use add_predictions and add_residuals in making this plot.
+
+```{r}
+birthweight_df %>%
+  add_residuals(lm_model) %>%
+  add_predictions(lm_model) %>%
+  ggplot(aes(
+    x = pred,
+    y = resid
+  )) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  labs(
+    x = "Fitted Values",
+    y = "Model Residuals"
+  )
+```
+
+Then, we compare our model to two other models.
+
+```{r}
+cv_df = 
+  crossv_mc(birthweight_df, 100) %>%
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble)
+  )
+```
+
+```{r}
+cv_df = 
+  cv_df %>%
+  mutate(
+    lm_model_1 = map(.x = train, ~lm(bwt ~ babysex + bhead + blength + delwt + gaweeks + ppbmi + smoken + wtgain + mrace, data = birthweight_df)),
+    lm_model_2 = map(.x = train, ~lm(bwt ~ blength + gaweeks, data = birthweight_df)),
+    lm_model_3 = map(.x = train, ~lm(bwt ~ bhead + blength + babysex + bhead * blength + blength * babysex + bhead * babysex + bhead * blength * babysex, data = birthweight_df))
+  ) %>%
+  mutate(
+    rmse_model_1 = map2_dbl(lm_model_1, test, ~rmse(model = .x, data = .y)),
+    rmse_model_2 = map2_dbl(lm_model_2, test, ~rmse(model = .x, data = .y)),
+    rmse_model_3 = map2_dbl(lm_model_3, test, ~rmse(model = .x, data = .y)),
+  )
+```
+
+We make a violin plot to make a comparison between different models.
+
+```{r}
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + 
+  geom_violin()
+```
+
+From the violin plot, we can see that our model `model_1` has the overall lowest rmse result and the overall best prediction performance compared with two others (if only based on this violin plot). And `model_3` also performs better than `model_2` according to the plot. It may because our model contains more useful explanatory features, so our model predicts more accurately. But we still need further analysis and investigation on whether our model truly performs best compared with the other two from different aspects.
