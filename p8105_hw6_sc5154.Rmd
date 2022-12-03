@@ -13,6 +13,7 @@ knitr::opts_chunk$set(collapse = TRUE, message = FALSE)
 ```{r}
 library(tidyverse)
 library(modelr)
+library(corrplot)
 ```
 
 
@@ -207,5 +208,92 @@ cities_OR %>%
 ```
 
 
+### Problem 3
+
+First we import the original raw dataset.
+```{r}
+birthweight_raw = 
+  read_csv("Data/birthweight.csv")
+```
+
+Then we clean the dataset for further regression analysis, which will include:
+
+* Convert numeric to factor where appropriate
+* Check and omit the missing data.
+
+After checking the dataset, we found that the columns `pnumlbw` and `pnumsga` didn't contain useful information, so we just remove them.
+
+```{r}
+birthweight_df = 
+  birthweight_raw %>%
+  mutate(
+    babysex = as.factor(babysex),
+    frace = as.factor(frace),
+    malform = as.factor(malform),
+    mrace = as.factor(mrace)
+  ) %>%
+  select(-pnumsga, -pnumlbw) %>%
+  na.omit() 
+```
+
+Next, we choose the features we would like to put in the regression model.
+After reading the description of the dataset, I think the following features should be put into model:
+
+1. The physiological information of babies, because it directly reflect the condition of baby, which include:
+* babysex
+* bhead
+* blength
+
+2. The physiological information of mother and father as well as the pregnancy status, because the heath conditions of parents must have strong connection with the baby (especially like smoking status), and that include:
+* delwt
+* frace
+* mrace
+* momage
+* menarche
+
+3. The information of pregancy, since the pregancy status would also impact the baby's weight, and that include:
+* wtgain
+* smoken
+* ppbmi
+* malform
+* smoken
+
+And we also take a brief look at the features from data-driven aspects. We calculate the correlation between the features.
+```{r}
+numeric_variables = 
+  birthweight_df %>%
+  select(-babysex, -frace, -malform, -mrace)
+
+factor_variables = 
+  birthweight_df %>%
+  select(babysex, frace, malform, mrace, bwt) %>%
+  mutate(
+    babysex = as.numeric(babysex),
+    frace = as.numeric(frace),
+    malform = as.numeric(malform),
+    mrace = as.numeric(mrace)
+  )
+
+numeric_variables %>%
+  cor() %>%
+  corrplot()
+
+factor_variables %>%
+  cor() %>%
+  corrplot()
+```
+
+And the results shows that some of the variables have a obvious correlation with the `bwt`.
+
+Combining all the analysis above, we decide to choose the following variables into consideration:
+`bhead`, `blength`, `delwt`, `gaweeks`, `ppbmi`, `smoken`, `wtgain`, `babysex`, `mrace`.
+
+Now we build the linear regression model.
+
+```{r}
+lm_model_1 = lm(bwt ~ babysex + bhead + blength + delwt + gaweeks + ppbmi + smoken + wtgain + mrace, data = birthweight_df)
+
+summary(lm_model_1)
+```
 
 
